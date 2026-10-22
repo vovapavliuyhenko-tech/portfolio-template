@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Имя Фамилия | Веб-дизайнер</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;1,400&family=Inter+Tight:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ddd8d2;
+  --wine:#6b1313;
+  --cream:#f5eed4;
+  --mist:#bfccce;
+  --serif:"Cormorant","IvyPrestoHeadline",Georgia,serif;
+  --sans:"Inter Tight",Arial,sans-serif;
+  --pad:24px;
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+  --ease-io:cubic-bezier(.65,0,.35,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--wine);font-family:var(--sans);font-size:14px;line-height:1.35;overflow-x:hidden}
+body.locked{overflow:hidden}
+a{color:inherit;text-decoration:none}
+.serif{font-family:var(--serif);font-weight:400;letter-spacing:-.02em;line-height:.9}
+.br{white-space:nowrap}
+.br::before{content:"[ "}.br::after{content:" ]"}
+.link{position:relative;display:inline-block;transition:opacity .3s}
+.link:hover{opacity:.6}
+
+/* бумажная текстура */
+.grain{position:fixed;inset:-50%;width:200%;height:200%;pointer-events:none;z-index:900;opacity:.09;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,3%)}80%{transform:translate(3%,1%)}100%{transform:translate(0,0)}}
+
+/* ================= ПРЕЛОАДЕР =================
+   фото поворачивается на -19° за 600мс,
+   две карточки уезжают влево (-690 / -495px на 1366) за 1100мс easeOut */
+.loader{position:fixed;inset:0;z-index:1000;background:var(--wine);color:var(--paper);overflow:hidden;transition:opacity .6s ease .1s,visibility 0s .7s}
+.loader.done{opacity:0;visibility:hidden}
+.loader__name{position:absolute;left:21%;top:7%;font-size:clamp(40px,4.4vw,64px)}
+.loader__name span{display:block}
+.loader__name span+span{padding-left:.9em}
+.loader__photo{position:absolute;left:1.5%;top:28%;width:clamp(70px,7vw,100px);padding:6px 6px 16px;background:#f4f1ec;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .6s linear}
+.loader__photo div{aspect-ratio:3/4;background:url(https://picsum.photos/seed/portrait7/300/400?grayscale) center/cover}
+.loader.go .loader__photo{transform:rotate(-19deg)}
+.loader__slide{position:absolute;top:0;bottom:0;transition:transform 1.1s var(--ease-out)}
+.loader__slide.s1{left:62%;width:50.5vw;background:#5a0f0f}
+.loader__slide.s2{left:72%;width:36.2vw;background:#4a0c0c}
+.loader.go .s1{transform:translateX(-50.5vw)}
+.loader.go .s2{transform:translateX(-36.2vw)}
+.loader__pct{position:absolute;left:var(--pad);bottom:var(--pad);font-size:12px}
+
+/* ================= ФИКСИРОВАННАЯ ШАПКА =================
+   появляется после 900px прокрутки, высота 81px */
+.bar{position:fixed;left:0;right:0;top:0;height:81px;z-index:500;padding:16px var(--pad);display:flex;justify-content:space-between;font-size:11px;color:var(--paper);mix-blend-mode:difference;transform:translateY(-100%);opacity:0;transition:transform .5s var(--ease-out),opacity .5s;pointer-events:none}
+.bar.show{transform:none;opacity:1;pointer-events:auto}
+.bar nav,.bar .r{display:flex;flex-direction:column;gap:2px}
+.bar .r{align-items:flex-end}
+
+/* ================= ПЕРВЫЙ ЭКРАН (sticky, 100vh) ================= */
+.sticky{position:sticky;top:0}
+.hero{height:100vh;min-height:550px;overflow:hidden;z-index:1;background:var(--paper)}
+.hero__bgshape{position:absolute;left:0;right:0;top:0;height:100%;background:var(--paper);will-change:transform}
+.hero .menu{position:absolute;left:var(--pad);top:var(--pad);display:flex;flex-direction:column;gap:2px;font-size:11px}
+.hero__lead{position:absolute;left:18%;top:var(--pad);font-size:11px;max-width:190px}
+.hero__status{position:absolute;right:var(--pad);top:var(--pad);font-size:11px;display:flex;gap:6px;text-align:right}
+.hero__status b{font-size:10px;line-height:1.3}
+.hero__title{position:absolute;left:43%;top:2vh;font-size:clamp(60px,6.4vw,104px)}
+.hero__title .l2{display:block;padding-left:.8em}
+.hero__title .role{position:absolute;left:0;top:1.2em;font-family:var(--serif);font-size:.26em;letter-spacing:0}
+.hero__side{position:absolute;left:var(--pad);bottom:var(--pad);display:flex;flex-direction:column;gap:2px;font-size:11px}
+
+.hero__collage{position:absolute;left:31%;top:58vh;width:520px;height:300px}
+.polaroid{position:absolute;left:0;top:0;width:150px;padding:10px 10px 30px;background:#f6f3ee;box-shadow:0 12px 30px rgba(60,20,20,.18);transform:rotate(var(--ro,0deg));will-change:transform}
+.polaroid .ph{aspect-ratio:4/5;background:url(https://picsum.photos/seed/portrait7/400/500?grayscale) center/cover}
+.polaroid small{position:absolute;right:-26px;top:10px;writing-mode:vertical-rl;font-family:var(--serif);font-style:italic;font-size:13px;color:#555}
+.note{position:absolute;left:135px;top:40px;width:250px;padding:18px 18px 16px;background:var(--cream);box-shadow:0 14px 30px rgba(60,20,20,.15)}
+.note h2{font-size:28px;line-height:.95;margin-bottom:18px}
+.note p{font-size:11px;line-height:1.5}
+.clip{position:absolute;right:-12px;top:-18px;width:22px;height:60px;border:2px solid #9a9a9a;border-radius:11px;transform:rotate(-24deg)}
+.clip::after{content:"";position:absolute;left:4px;right:4px;top:6px;bottom:14px;border:2px solid #9a9a9a;border-radius:7px}
+
+/* «билетик»: hover → три элемента сдвигаются (+17, -50) за 200мс */
+.about{position:absolute;left:var(--pad);top:62vh;width:200px;height:120px;cursor:pointer}
+.about .num{position:absolute;left:0;top:0;font-size:52px}
+.about .badge{position:absolute;left:56px;top:-8px;width:40px;height:40px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:14px;color:#999;box-shadow:0 4px 10px rgba(0,0,0,.08)}
+.about .txt{position:absolute;left:120px;top:4px;font-size:11px;width:120px}
+.about .card,.about .eye,.about .hint{position:absolute;transition:transform .2s linear}
+.about .card{left:30px;top:30px;width:110px;height:76px;background:var(--mist);box-shadow:0 6px 14px rgba(0,0,0,.12);transform:rotate(-3deg)}
+.about .eye{left:118px;top:32px;font-size:16px;animation:blink 1.5s steps(1) infinite}
+.about .hint{left:38px;top:66px;font-size:10px;width:96px;line-height:1.3}
+.about:hover .card{transform:translate(17px,-50px) rotate(-3deg)}
+.about:hover .eye,.about:hover .hint{transform:translate(17px,-50px)}
+@keyframes blink{0%{opacity:1}66.6%{opacity:0}100%{opacity:1}}
+
+/* появление первого экрана после прелоадера */
+.hero .fade{opacity:0;transition:opacity 1s ease}
+.ready .hero .fade{opacity:1}
+
+/* ================= ПОРТФОЛИО =================
+   каждый ряд (2 плитки, 618px) прилипает, следующий наезжает сверху;
+   макет внутри уезжает вверх на 60px за 1000px прокрутки, старт — середина экрана */
+.prow{height:618px;z-index:2;display:grid;grid-template-columns:1fr 1fr}
+.tile{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.tile__bg{position:absolute;inset:0;background:var(--g) center/cover no-repeat}
+.mock{position:relative;width:min(300px,56%);background:var(--cream);box-shadow:0 30px 60px rgba(0,0,0,.35);transform:translateY(var(--my,0px));will-change:transform}
+.mock__screen{aspect-ratio:4/3;background:var(--s) center/cover no-repeat;display:flex;align-items:flex-end;padding:12px;color:#fff;font-family:var(--serif);font-size:22px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.mock__cap{padding:14px 14px 18px;text-align:center}
+.mock__cap h3{font-family:var(--serif);font-weight:400;font-size:28px;line-height:1}
+.mock__cap p{font-size:11px;margin-top:6px}
+.mock.dark{background:var(--wine);color:var(--paper)}
+
+/* ================= ПРАЙС =================
+   линии: точка уезжает вправо и растягивается в линию за 2500мс easeInOut при появлении */
+section{position:relative;z-index:3;background:var(--paper)}
+.price{min-height:768px;padding:90px var(--pad) 60px}
+.head{display:grid;grid-template-columns:1fr 1fr;margin-bottom:60px}
+.head .br{font-size:11px;margin-top:12px}
+.head h2{font-size:clamp(40px,3.6vw,56px)}
+.head h2 span{display:block}
+.head h2 .ind{padding-left:1.4em}
+.row{position:relative;display:grid;grid-template-columns:8% 30% 1fr 20%;gap:20px;padding:22px 0 30px}
+.row .line{position:absolute;left:0;top:0;width:1%;height:1px;background:var(--wine);opacity:.5;transform-origin:left;transform:scaleX(0)}
+.price.in .row .line{transform:scaleX(100);transition:transform 2.5s var(--ease-io)}
+.row .n{font-size:11px}
+.row h3{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1}
+.row .desc{font-size:12px;max-width:340px}
+.row .desc .br{display:block;margin-top:14px;font-size:11px}
+.row .price-v{font-family:var(--serif);font-size:30px;text-align:right;line-height:1}
+
+/* ================= ЭТАПЫ =================
+   заголовок закреплён, карточки едут влево 1:1 со скроллом */
+.steps{z-index:3}
+.steps__pin{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.steps .head{margin-bottom:40px;padding:0 var(--pad)}
+.track{display:flex;gap:16px;padding:0 var(--pad);will-change:transform}
+.card{flex:0 0 340px;height:440px;padding:20px;display:flex;flex-direction:column;background:var(--cream);position:relative}
+.card.w{background:var(--wine);color:var(--paper)}
+.card.m{background:var(--mist)}
+.card .n{font-family:var(--serif);font-size:28px}
+.card .pic{position:absolute;right:-20px;top:40px;width:220px;height:130px;background:#fff center/cover no-repeat;border:4px solid #fff;box-shadow:0 10px 24px rgba(0,0,0,.2);transform:rotate(-8deg)}
+.card h3{margin-top:auto;font-family:var(--serif);font-weight:400;font-size:34px;line-height:.95;margin-bottom:14px}
+.card p{font-size:11px;line-height:1.5}
+
+/* ================= КОНТАКТЫ =================
+   плашка опускается на 230px за 500px скролла, фото поворачивается на -6° */
+.contact{min-height:740px;padding:90px var(--pad) var(--pad);overflow:hidden;background:url(https://picsum.photos/seed/mountains9/1600/1000?grayscale) center bottom/cover}
+.contact::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,var(--paper) 0%,rgba(221,216,210,.85) 30%,rgba(221,216,210,0) 70%)}
+.contact .shape{position:absolute;left:0;right:0;top:0;height:120px;background:var(--paper);transform:translateY(var(--sy,0px));will-change:transform}
+.contact .grid{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.contact h2{font-size:clamp(40px,3.6vw,56px)}
+.contact h2 .ind{display:block;padding-left:1.4em}
+.contact .pol{position:absolute;left:8%;top:-20px;width:200px;padding:12px 12px 50px;background:#f6f3ee;transform:rotate(var(--ro,0deg));box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.contact .pol .ph{aspect-ratio:1;background:url(https://picsum.photos/seed/doorway3/500/500) center/cover}
+.contact .pol small{position:absolute;left:14px;bottom:12px;font-size:10px;line-height:1.3}
+.contact .links{display:flex;flex-direction:column;gap:2px;font-size:11px;margin-top:30px}
+.contact .aside{font-family:var(--serif);font-size:26px;line-height:1;max-width:280px;margin-top:20px}
+.foot{position:relative;margin-top:30vh;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;align-items:end;gap:20px;font-size:11px;color:#eee}
+.foot .sig{font-size:40px;color:var(--paper)}
+
+/* ================= COOKIE / POPUP ================= */
+.cookie{position:fixed;right:var(--pad);bottom:var(--pad);z-index:800;width:400px;max-width:calc(100vw - 32px);padding:18px 20px 20px;background:var(--paper);box-shadow:0 10px 40px rgba(0,0,0,.2);font-size:11px;line-height:1.45;display:none}
+.cookie.show{display:block}
+.cookie a{text-decoration:underline}
+.cookie button{margin-top:14px;background:var(--wine);color:#fff;border:0;padding:10px 14px;font:inherit;cursor:pointer}
+.cookie .x{position:absolute;right:10px;top:6px;background:none;color:var(--wine);margin:0;padding:4px;font-size:14px}
+.modal{position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.6);display:grid;place-items:center;opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
+.modal.open{opacity:1;visibility:visible;transition:opacity .3s}
+.modal .box{position:relative;width:min(460px,calc(100vw - 32px));background:var(--paper);padding:36px 28px}
+.modal .close{position:absolute;right:12px;top:8px;background:none;border:0;color:var(--wine);font-size:22px;cursor:pointer}
+.modal h3{font-family:var(--serif);font-weight:400;font-size:40px;line-height:.95;margin-bottom:20px}
+.modal p{font-size:13px;line-height:1.5}
+.modal input{display:block;width:100%;border:0;border-bottom:1px solid var(--wine);background:none;padding:12px 0;font:inherit;color:var(--wine);margin-bottom:12px;outline:none}
+.modal form button{margin-top:16px;background:var(--wine);color:#fff;border:0;padding:14px 20px;font:inherit;cursor:pointer;width:100%}
+
+/* ================= МОБИЛЬНАЯ ВЕРСИЯ ================= */
+@media (max-width:900px){
+  :root{--pad:16px}
+  .hero .menu,.hero__lead,.hero__side{display:none}
+  .bar{height:56px}
+  .hero__title{left:16px;top:60px}
+  .hero__title .role{position:relative;top:0;display:block;font-size:18px;margin:6px 0}
+  .hero__status{top:auto;bottom:16px;right:16px}
+  .hero__collage{left:16px;top:300px;transform:scale(.8);transform-origin:left top}
+  .about{top:auto;bottom:60px}
+  .prow{height:auto;grid-template-columns:1fr}
+  .tile{height:424px}
+  .head{grid-template-columns:1fr;gap:16px}
+  .row{grid-template-columns:1fr;gap:10px}
+  .row .price-v{text-align:left}
+  .card{flex-basis:280px;height:400px}
+  .contact .grid{grid-template-columns:1fr}
+  .contact .pol{position:relative;left:0;top:0;margin:20px 0 40px}
+  .foot{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body class="locked">
+<div class="grain"></div>
+
+<!-- ПРЕЛОАДЕР -->
+<div class="loader" id="loader">
+  <div class="loader__slide s1"></div>
+  <div class="loader__slide s2"></div>
+  <div class="loader__photo"><div></div></div>
+  <div class="loader__name serif"><span>Имя</span><span>Фамилия</span></div>
+  <div class="loader__pct"><span id="pct">0</span>%</div>
+</div>
+
+<!-- ФИКСИРОВАННАЯ ШАПКА -->
+<div class="bar" id="bar">
+  <nav>
+    <a class="link" href="#work">Портфолио</a>
+    <a class="link" href="#price">Прайс</a>
+    <a class="link" href="#steps">Этапы работы</a>
+    <a class="link" href="#contact">Контакты</a>
+  </nav>
+  <div class="r">
+    <a class="link br" href="#">Связаться в Telegram</a>
+    <a class="link br" href="#" data-open="form">Оставить заявку</a>
+  </div>
+</div>
+
+<!-- ПЕРВЫЙ ЭКРАН -->
+<header class="hero sticky" id="top">
+  <div class="hero__bgshape" id="heroShape"></div>
+  <nav class="menu fade">
+    <a class="link" href="#work">Портфолио</a>
+    <a class="link" href="#price">Прайс</a>
+    <a class="link" href="#steps">Этапы работы</a>
+    <a class="link" href="#contact">Контакты</a>
+  </nav>
+  <p class="hero__lead fade">Короткая фраза о вашем опыте и подходе к работе</p>
+  <p class="hero__status fade"><b>♥</b><span>Открыт(а) к новым<br>проектам</span></p>
+
+  <h1 class="hero__title serif fade">
+    <span>Имя</span>
+    <span class="role br">ваша профессия</span>
+    <span class="l2">Фамилия</span>
+  </h1>
+
+  <div class="hero__collage fade">
+    <div class="polaroid" id="heroPhoto"><div class="ph"></div><small>ваше фото</small></div>
+    <div class="note">
+      <span class="clip"></span>
+      <h2 class="serif">Главная мысль о том, что вы делаете</h2>
+      <p>Направление 1<br>Направление 2<br>Направление 3</p>
+    </div>
+  </div>
+
+  <div class="about fade" data-open="about">
+    <span class="num serif">00+</span>
+    <span class="badge">★</span>
+    <p class="txt">подпись к цифре: опыт, награды</p>
+    <span class="card"></span>
+    <span class="eye">👁</span>
+    <span class="hint">нажмите, чтобы узнать больше</span>
+  </div>
+
+  <div class="hero__side fade">
+    <a class="link br" href="#">Связаться в Telegram</a>
+    <a class="link br" href="#">Связаться в Вконтакте</a>
+    <a class="link br" href="#" data-open="form">Оставить заявку</a>
+  </div>
+</header>
+
+<!-- ПОРТФОЛИО: 5 рядов по 2 плитки -->
+<div id="work"></div>
+<div id="rows"></div>
+
+<!-- ПРАЙС -->
+<section class="price" id="price">
+  <div class="head">
+    <span class="br">Формат + Стоимость</span>
+    <h2 class="serif"><span>Заголовок раздела</span><span class="ind">с ценами в две</span><span>или три строки</span></h2>
+  </div>
+  <div id="priceRows"></div>
+</section>
+
+<!-- ЭТАПЫ -->
+<section class="steps" id="steps">
+  <div class="steps__pin">
+    <div class="head">
+      <span class="br">Этапы работы</span>
+      <h2 class="serif"><span>Заголовок про процесс:</span><span class="ind">вторая строка</span></h2>
+    </div>
+    <div class="track" id="track"></div>
+  </div>
+</section>
+
+<!-- КОНТАКТЫ -->
+<section class="contact" id="contact">
+  <div class="shape" id="cShape"></div>
+  <span class="br" style="position:relative;font-size:11px">Контакты</span>
+  <div class="grid">
+    <div style="position:relative">
+      <div class="pol" id="cPhoto"><div class="ph"></div><small>Локация:<br>ваш город</small></div>
+    </div>
+    <div>
+      <h2 class="serif">Заголовок-приглашение<span class="ind">к сотрудничеству?</span></h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div class="links">
+          <a class="link br" href="#">Связаться в Telegram</a>
+          <a class="link br" href="#">Связаться в Вконтакте</a>
+          <a class="link br" href="mailto:you@example.com">Написать на Email</a>
+        </div>
+        <div>
+          <p class="aside">оставьте заявку, и я свяжусь с вами ↓</p>
+          <div class="links" style="margin-top:16px"><a class="link br" href="#" data-open="form">Оставить заявку</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <span class="sig serif">Имя<br>Фамилия</span>
+    <a class="link" href="#">Политика конфиденциальности</a>
+    <a class="link" href="#">Согласие на обработку персональных данных</a>
+    <a class="link" href="#top" style="justify-self:end">Наверх</a>
+  </div>
+</section>
+
+<div class="cookie" id="cookie">
+  <button class="x" data-ck aria-label="Закрыть">×</button>
+  Сайт использует cookies. Продолжая пользоваться сайтом, вы соглашаетесь с <a href="#">Политикой конфиденциальности</a> и <a href="#">согласием на обработку персональных данных</a>.
+  <br><button data-ck>ОК</button>
+</div>
+
+<div class="modal" id="m-about"><div class="box"><button class="close">×</button>
+  <h3>Обо мне</h3><p>Здесь короткий рассказ о себе: опыт, подход, чем вы отличаетесь. Замените этот текст своим.</p></div></div>
+<div class="modal" id="m-form"><div class="box"><button class="close">×</button>
+  <form onsubmit="event.preventDefault();this.innerHTML='<h3>Спасибо!</h3><p>Заявка отправлена (демо)</p>'">
+    <h3>Оставить заявку</h3>
+    <input placeholder="Имя" required>
+    <input placeholder="Телефон или Telegram" required>
+    <input placeholder="Коротко о проекте">
+    <button>Отправить</button>
+  </form></div></div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+
+  /* ---------- контент-заглушки ---------- */
+  const rows = $('#rows');
+  for (let r = 0; r < 5; r++) {
+    const row = document.createElement('div');
+    row.className = 'prow sticky';
+    row.innerHTML = [0, 1].map(c => {
+      const n = r * 2 + c + 1, nn = String(n).padStart(2, '0');
+      return `<a class="tile" href="#"><div class="tile__bg" style="--g:url(https://picsum.photos/seed/bg${n}/1000/900)"></div>
+        <div class="mock${n % 3 === 2 ? ' dark' : ''}"><div class="mock__screen" style="--s:url(https://picsum.photos/seed/site${n}/800/600)">Проект ${nn}</div>
+        <div class="mock__cap"><h3>Название</h3><p>Тип сайта и краткое описание</p></div></div></a>`;
+    }).join('');
+    rows.appendChild(row);
+  }
+  $('#priceRows').innerHTML = ['первая', 'вторая', 'третья', 'четвёртая'].map((t, i) =>
+    `<div class="row"><span class="line"></span><span class="n br">0${i + 1}</span><h3>Услуга ${t}</h3>
+     <p class="desc">Описание услуги: что входит, для каких задач подходит и какой результат получает клиент.<span class="br">от 00 рабочих дней</span></p>
+     <span class="price-v">от 00 000 ₽</span></div>`).join('') + '<div class="row" style="padding:0"><span class="line"></span></div>';
+  const cardCls = ['', 'w', '', 'm', '', 'w'];
+  $('#track').innerHTML = cardCls.map((c, i) =>
+    `<article class="card ${c}"><span class="n br">0${i + 1}</span>${i > 0 && i < 4 ? `<div class="pic" style="background-image:url(https://picsum.photos/seed/step${i}/440/260)"></div>` : ''}
+     <h3>Название этапа</h3><p>Короткое описание: что происходит на этом этапе, сколько длится и что получает клиент.</p></article>`).join('');
+
+  /* ---------- прелоадер ---------- */
+  const pct = $('#pct'), loader = $('#loader');
+  requestAnimationFrame(() => loader.classList.add('go'));
+  let p = 0;
+  const tick = setInterval(() => {
+    p = Math.min(100, p + Math.ceil(Math.random() * 6));
+    pct.textContent = p;
+    if (p >= 100) {
+      clearInterval(tick);
+      setTimeout(() => {
+        loader.classList.add('done');
+        document.body.classList.remove('locked');
+        document.body.classList.add('ready');
+        let seen = false; try { seen = localStorage.getItem('ck'); } catch (e) {}
+        if (!seen) $('#cookie').classList.add('show');
+      }, 250);
+    }
+  }, 45);
+
+  /* ---------- «появление в зоне видимости» для прайса ---------- */
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+  }), { threshold: .15 });
+  io.observe($('.price'));
+
+  /* ---------- анимации, привязанные к скроллу ---------- */
+  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const bar = $('#bar'), heroShape = $('#heroShape'), heroPhoto = $('#heroPhoto');
+  const prows = $$('.prow'), steps = $('#steps'), track = $('#track');
+  const contact = $('#contact'), cShape = $('#cShape'), cPhoto = $('#cPhoto');
+  const mobile = () => innerWidth <= 900;
+
+  function sizeSteps() {
+    const dist = Math.max(0, track.scrollWidth - innerWidth);
+    steps.style.height = (innerHeight + dist) + 'px';
+  }
+
+  function onScroll() {
+    const y = scrollY, vh = innerHeight;
+
+    // шапка: после 900px
+    bar.classList.toggle('show', y > 900);
+
+    // первый экран: фон уезжает на -500px за 1000px, фото поворачивается на -10° за 500px
+    heroShape.style.transform = `translateY(${-500 * clamp(y / 1000)}px)`;
+    heroPhoto.style.setProperty('--ro', (-10 * clamp(y / 500)) + 'deg');
+
+    // портфолио: макет -60px за 1000px, старт — когда верх ряда на середине экрана
+    prows.forEach(row => {
+      const top = row.offsetTop - vh * 0.5;
+      const k = clamp((y - top) / 1000);
+      row.querySelectorAll('.mock').forEach(m => m.style.setProperty('--my', (-60 * k) + 'px'));
+    });
+
+    // этапы: горизонтальный сдвиг 1:1 со скроллом
+    const st = steps.offsetTop, dist = steps.offsetHeight - vh;
+    const k2 = dist > 0 ? clamp((y - st) / dist) : 0;
+    track.style.transform = `translateX(${-k2 * dist}px)`;
+
+    // контакты: плашка +230px за 500px (старт +300px), фото -6° за 500px (старт — низ экрана)
+    const ct = contact.offsetTop;
+    cShape.style.setProperty('--sy', (230 * clamp((y - (ct - vh) - 300) / 500)) + 'px');
+    cPhoto.style.setProperty('--ro', (-6 * clamp((y - (ct - vh)) / 500)) + 'deg');
+  }
+  let ticking = false;
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { onScroll(); ticking = false; }); } }, { passive: true });
+  addEventListener('resize', () => { sizeSteps(); onScroll(); });
+  addEventListener('load', () => { sizeSteps(); onScroll(); });
+  sizeSteps(); onScroll();
+
+  /* ---------- cookie ---------- */
+  $$('[data-ck]').forEach(b => b.onclick = () => { $('#cookie').classList.remove('show'); try { localStorage.setItem('ck', 1); } catch (e) {} });
+
+  /* ---------- попапы ---------- */
+  $$('[data-open]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); $('#m-' + a.dataset.open).classList.add('open'); }));
+  $$('.modal').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.classList.contains('close')) m.classList.remove('open'); }));
+})();
+</script>
+</body>
+</html>
